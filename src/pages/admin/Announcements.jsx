@@ -28,7 +28,7 @@ const getExpiryCountdown = (expiryStr) => {
   if (diffHours > 0) return `Expires in ${diffHours}h ${diffMins % 60}m`;
   return `Expires in ${diffMins}m`;
 };
-
+// Main Component
 export const Announcements = () => {
   const { routes, buses, addAlert, deleteAlert } = useBuses();
   const { currentUser } = useAuth();
@@ -447,3 +447,4 @@ export const Announcements = () => {
 };
 
 export default Announcements;
+
