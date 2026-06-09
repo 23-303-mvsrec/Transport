@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityBus — Offline</title>
+  <style>
+    :root {
+      --primary: #0b57d0;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .card {
+      background-color: var(--card-bg);
+      padding: 30px;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      display: inline-block;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 10px 0;
+    }
+    p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0 0 20px 0;
+      line-height: 1.5;
+    }
+    .cache-section {
+      text-align: left;
+      margin-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 20px;
+    }
+    .cache-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .bus-list {
+      max-height: 200px;
+      overflow-y: auto;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .bus-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      margin-bottom: 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .bus-num {
+      font-weight: bold;
+      color: #38bdf8;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 14px;
+      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.2s;
+      box-sizing: border-box;
+    }
+    .btn:hover {
+      background-color: #0c4cb4;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🚌</div>
+    <h1>You're offline.</h1>
+    <p>Showing last known data cached on your device.</p>
+    
+    <button onclick="window.location.reload()" class="btn">Retry Connection</button>
+
+    <div class="cache-section" id="cacheSection" style="display: none;">
+      <div class="cache-title">Last Cached Fleet</div>
+      <ul class="bus-list" id="busList"></ul>
+    </div>
+  </div>
+
+  <script>
+    // Read from localStorage to render cached bus list if available
+    try {
+      const cachedBuses = JSON.parse(localStorage.getItem('citybus_mock_buses') || '[]');
+      if (cachedBuses && cachedBuses.length > 0) {
+        document.getElementById('cacheSection').style.display = 'block';
+        const list = document.getElementById('busList');
+        cachedBuses.slice(0, 5).forEach(bus => {
+          const li = document.createElement('li');
+          li.className = 'bus-item';
+          li.innerHTML = `
+            <span class="bus-num">${bus.number}</span>
+            <span>${bus.routeName || 'Active route'}</span>
+          `;
+          list.appendChild(li);
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to parse cached data from localstorage:', e);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b57d0" />
+      <stop offset="100%" stop-color="#1a73e8" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Circular background -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)" />
+  
+  <!-- Outer signal waves representing live tracking -->
+  <path d="M 256,60 A 196,196 0 0,1 452,256" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.3" />
+  <path d="M 256,100 A 156,156 0 0,1 412,256" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round" opacity="0.6" />
+  <path d="M 256,140 A 116,116 0 0,1 372,256" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" filter="url(#glow)" />
+  
+  <!-- Styled Bus Shape -->
+  <g transform="translate(146, 176)">
+    <!-- Bus main body -->
+    <rect x="20" y="30" width="180" height="150" rx="40" fill="#ffffff" />
+    
+    <!-- Windshield -->
+    <path d="M 35,65 Q 35,50 50,50 L 170,50 Q 185,50 185,65 L 185,100 L 35,100 Z" fill="#0b57d0" />
+    
+    <!-- Left and Right headlights -->
+    <circle cx="55" cy="145" r="14" fill="#f59e0b" />
+    <circle cx="165" cy="145" r="14" fill="#f59e0b" />
+    
+    <!-- Grille/Bumper details -->
+    <rect x="85" y="135" width="50" height="15" rx="5" fill="#cbd5e1" />
+    <line x1="95" y1="142" x2="125" y2="142" stroke="#64748b" stroke-width="2" />
+    
+    <!-- Bus Wheels (bottom protrusions) -->
+    <rect x="40" y="175" width="30" height="15" rx="5" fill="#334155" />
+    <rect x="150" y="175" width="30" height="15" rx="5" fill="#334155" />
+    
+    <!-- Route Board (Top indicator) -->
+    <rect x="60" y="10" width="100" height="24" rx="6" fill="#1e293b" />
+    <rect x="65" y="14" width="90" height="16" rx="3" fill="#fbbf24" />
+    <!-- Small dots representing LED text -->
+    <circle cx="75" cy="22" r="2" fill="#1e293b" />
+    <circle cx="85" cy="22" r="2" fill="#1e293b" />
+    <circle cx="95" cy="22" r="2" fill="#1e293b" />
+    <circle cx="105" cy="22" r="2" fill="#1e293b" />
+  </g>
+</svg>
