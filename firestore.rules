@@ -1,0 +1,96 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user has admin role
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Check if user has driver role
+    function isDriver() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'driver';
+    }
+
+    // Helper: Checks if the user is writing to their own document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Cities, Stops, Routes
+    match /cities/{cityId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /stops/{stopId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /routes/{routeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Buses
+    match /buses/{busId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+      allow update: if isAdmin() || (
+        // Driver is allowed to update specific live metrics
+        isAuthenticated() && 
+        exists(/databases/$(database)/documents/drivers/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/drivers/$(request.auth.uid)).data.assignedBusId == busId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'currentLocation', 'speed', 'heading', 'lastUpdated', 
+          'occupancy', 'currentStopIndex', 'status', 'isOnTrip'
+        ])
+      );
+    }
+
+    // Drivers
+    match /drivers/{driverId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // Announcements
+    match /announcements/{announcementId} {
+      allow read: if resource.data.isActive == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Trip Logs
+    match /tripLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() || (isDriver() && request.resource.data.driverId == request.auth.uid);
+      allow update: if isAdmin() || (isDriver() && resource.data.driverId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Issue Reports
+    match /issueReports/{reportId} {
+      allow create: if isAuthenticated() && request.resource.data.reportedBy == request.auth.uid;
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}
