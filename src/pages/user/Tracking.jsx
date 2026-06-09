@@ -165,18 +165,21 @@ export const Tracking = () => {
     if (showDetailsSheet) return handleFocusTrap(showDetailsSheet, 'details-sheet');
   }, [showTimelineModal, showReportModal, showDetailsSheet]);
 
-  // Maps loading & preference setup
+  // Maps loading & preference setup - use Leaflet by default (no Google Maps key)
   useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     const pref = localStorage.getItem('userMapPreference');
-    if (isLowBandwidth || pref === 'OSM') {
+    
+    // If no Google Maps key or user prefers OSM, use Leaflet immediately
+    if (!apiKey || apiKey === 'your_google_maps_api_key_here' || isLowBandwidth || pref === 'OSM') {
       setMapEngine('leaflet');
       return;
     }
 
     let scriptTimeout = setTimeout(() => {
-      console.warn('Google Maps took too long, launching Leaflet OSM fallback...');
+      console.warn('Google Maps took too long, using Leaflet OSM...');
       setMapEngine('leaflet');
-    }, 5000);
+    }, 3000);
 
     loadGoogleMaps()
       .then(() => {

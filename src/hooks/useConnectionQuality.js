@@ -31,22 +31,23 @@ export const useConnectionQuality = () => {
     if (isFirebaseEnabled) {
       const startTime = performance.now();
       const testTimeout = setTimeout(() => {
-        // If query hasn't returned in 3 seconds, assume slow connection
+        // Only mark as slow if still loading after 5 seconds
         setConnState(prev => ({ ...prev, isSlowFirebase: true }));
-      }, 3000);
+      }, 5000);
 
       getDoc(doc(db, 'cities', 'hyderabad'))
         .then(() => {
           clearTimeout(testTimeout);
           const elapsed = performance.now() - startTime;
-          if (elapsed > 3000) {
+          // Only mark as slow if took more than 5 seconds
+          if (elapsed > 5000) {
             setConnState(prev => ({ ...prev, isSlowFirebase: true }));
           }
         })
         .catch(() => {
           clearTimeout(testTimeout);
-          // Network errors or timeout treat as slow
-          setConnState(prev => ({ ...prev, isSlowFirebase: true }));
+          // Don't mark as slow on error - Firebase might just not have the doc
+          // Only mark slow on actual network issues
         });
     }
 

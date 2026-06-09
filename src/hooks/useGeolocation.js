@@ -40,8 +40,15 @@ export const useGeolocation = () => {
   }, []);
 
   const startTracking = useCallback(() => {
+    // Default to Hyderabad center if geolocation unavailable
+    const HYDERABAD_CENTER = { lat: 17.3850, lng: 78.4867 };
+    
     if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser");
+      console.warn("Geolocation not supported, using Hyderabad default location");
+      setPosition(HYDERABAD_CENTER);
+      setAccuracy(100);
+      setError("Using default location (Hyderabad). GPS not available.");
+      setIsTracking(false);
       return;
     }
 
@@ -71,9 +78,14 @@ export const useGeolocation = () => {
       let message = "An unknown error occurred while retrieving location.";
       
       if (err.code === err.PERMISSION_DENIED) {
-        message = "Please allow location access in browser settings";
+        message = "Location access denied. Using default location.";
+        // Use default Hyderabad location
+        setPosition(HYDERABAD_CENTER);
+        setAccuracy(100);
       } else if (err.code === err.POSITION_UNAVAILABLE) {
-        message = "GPS signal unavailable. Move to open area.";
+        message = "GPS unavailable. Using default location.";
+        setPosition(HYDERABAD_CENTER);
+        setAccuracy(100);
       } else if (err.code === err.TIMEOUT) {
         message = "Location request timed out. Retrying...";
         
@@ -90,8 +102,20 @@ export const useGeolocation = () => {
       }
       
       setError(message);
-      console.warn("Geolocation watchPosition error:", message, err);
+      console.warn("Geolocation error:", message, err);
     };
+
+    // Check if we're on HTTPS (required for geolocation in most browsers)
+    const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+    
+    if (!isSecure) {
+      console.warn("Geolocation requires HTTPS. Using default location.");
+      setPosition(HYDERABAD_CENTER);
+      setAccuracy(100);
+      setError("Using default location. Enable HTTPS for GPS tracking.");
+      setIsTracking(false);
+      return;
+    }
 
     const options = {
       enableHighAccuracy: true,
@@ -104,6 +128,8 @@ export const useGeolocation = () => {
       watchIdRef.current = id;
     } catch (e) {
       setError("Failed to initialize location watch listener.");
+      setPosition(HYDERABAD_CENTER);
+      setAccuracy(100);
       setIsTracking(false);
       isTrackingRef.current = false;
     }

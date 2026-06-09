@@ -36,18 +36,34 @@ export const Home = () => {
 
   // Fetch current GPS coordinates
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          setUserCoords(coords);
-          setFromLabel('Current Location');
-        },
-        (err) => {
-          console.warn('Geolocation blocked or unavailable, using Hyderabad center:', err.message);
-        }
-      );
+    const HYDERABAD_CENTER = { lat: 17.3850, lng: 78.4867 };
+    
+    if (!navigator.geolocation) {
+      console.warn('Geolocation not supported, using Hyderabad center');
+      setUserCoords(HYDERABAD_CENTER);
+      return;
     }
+
+    // Check HTTPS requirement
+    const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+    if (!isSecure) {
+      console.warn('Geolocation requires HTTPS, using Hyderabad center');
+      setUserCoords(HYDERABAD_CENTER);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserCoords(coords);
+        setFromLabel('Current Location');
+      },
+      (err) => {
+        console.warn('Geolocation unavailable, using Hyderabad center:', err.message);
+        setUserCoords(HYDERABAD_CENTER);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
   }, []);
 
   // Stop Autocomplete Query

@@ -17,6 +17,7 @@ import {
   seedStops, 
   seedAnnouncements 
 } from '../services/seedData';
+import { loadTgsrtcGtfsData, DATA_SOURCES } from '../services/realTransitData';
 import toast from 'react-hot-toast';
 
 const BusContext = createContext();
@@ -31,10 +32,14 @@ export const BusProvider = ({ children }) => {
   const [activeRouteId, setActiveRouteId] = useState('R-01');
   const [activeBusId, setActiveBusId] = useState(null);
   const [isFirebaseOffline, setIsFirebaseOffline] = useState(false);
+  const [dataSource, setDataSource] = useState(DATA_SOURCES.seed);
+  const [dataAttribution, setDataAttribution] = useState('');
   
   // Real-time synchronization
   useEffect(() => {
     if (isFirebaseEnabled) {
+      let firstLoad = true;
+      
       const handleError = (error) => {
         console.warn("Firestore sync:", error.code || error.message);
         if (['unavailable', 'permission-denied', 'not-found', 'failed-precondition'].includes(error.code)) {
@@ -49,6 +54,15 @@ export const BusProvider = ({ children }) => {
           setIsFirebaseOffline(false);
           const busList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           setBuses(busList);
+          
+          // Auto-seed if empty on first load
+          if (firstLoad && busList.length === 0) {
+            console.log('Firestore buses empty, auto-seeding...');
+            import('../services/firebase').then(({ seedDatabase }) => {
+              seedDatabase().then(() => console.log('Auto-seed complete')).catch(console.error);
+            });
+          }
+          firstLoad = false;
         },
         handleError
       );
@@ -58,7 +72,7 @@ export const BusProvider = ({ children }) => {
         (snapshot) => {
           setIsFirebaseOffline(false);
           const routeList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          if (routeList.length > 0) setRoutes(routeList);
+          setRoutes(routeList.length > 0 ? routeList : seedRoutes);
         },
         handleError
       );
@@ -68,7 +82,7 @@ export const BusProvider = ({ children }) => {
         (snapshot) => {
           setIsFirebaseOffline(false);
           const stopList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          if (stopList.length > 0) setStops(stopList);
+          setStops(stopList.length > 0 ? stopList : seedStops);
         },
         handleError
       );
@@ -78,7 +92,7 @@ export const BusProvider = ({ children }) => {
         (snapshot) => {
           setIsFirebaseOffline(false);
           const alertList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setAlerts(alertList);
+          setAlerts(alertList.length > 0 ? alertList : seedAnnouncements);
         },
         handleError
       );
@@ -91,6 +105,8 @@ export const BusProvider = ({ children }) => {
       };
     } else {
       // Mock Local Storage synchronization
+      let cancelled = false;
+
       const syncLocalData = () => {
         const localBuses = localStorage.getItem('citybus_mock_buses');
         const localRoutes = localStorage.getItem('citybus_mock_routes');
@@ -127,8 +143,31 @@ export const BusProvider = ({ children }) => {
       };
 
       syncLocalData();
+      loadTgsrtcGtfsData()
+        .then((gtfsData) => {
+          if (cancelled || !gtfsData) return;
+          if (gtfsData.routes.length > 0) {
+            setRoutes(gtfsData.routes);
+            localStorage.setItem('citybus_mock_routes', JSON.stringify(gtfsData.routes));
+          }
+          if (gtfsData.stops.length > 0) {
+            setStops(gtfsData.stops);
+            localStorage.setItem('citybus_mock_stops', JSON.stringify(gtfsData.stops));
+          }
+          setDataSource(gtfsData.source);
+          setDataAttribution(gtfsData.attribution);
+        })
+        .catch((error) => {
+          if (import.meta.env.VITE_TRANSIT_DATA_SOURCE === DATA_SOURCES.tgsrtcGtfs) {
+            console.warn('TGSRTC GTFS data could not be loaded; using bundled seed data.', error.message);
+          }
+        });
+
       const interval = setInterval(syncLocalData, 1000);
-      return () => clearInterval(interval);
+      return () => {
+        cancelled = true;
+        clearInterval(interval);
+      };
     }
   }, []);
 
@@ -342,7 +381,9 @@ export const BusProvider = ({ children }) => {
       addAlert,
       deleteAlert,
       isFirebaseOffline,
-      isSimulated: !isFirebaseEnabled
+      isSimulated: !isFirebaseEnabled,
+      dataSource,
+      dataAttribution
     }}>
       {children}
     </BusContext.Provider>
