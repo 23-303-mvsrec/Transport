@@ -24,6 +24,27 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'light');
+
+  const toggleTheme = () => {
+    setTheme(prev => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('app_theme', next);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.style.backgroundColor = '#020617';
+    } else {
+      root.classList.remove('dark');
+      root.style.backgroundColor = '';
+    }
+  }, [theme]);
+
   // Helper flags
   const isAdmin = role === 'admin';
   const isDriver = role === 'driver';
@@ -50,18 +71,45 @@ export const AuthProvider = ({ children }) => {
           try {
             const userDocRef = doc(db, 'users', user.uid);
             const userDoc = await getDoc(userDocRef);
+            const userEmail = user.email?.toLowerCase().trim();
+            const isAdminEmail = userEmail === 'admin@citybus.in';
+            const isDriverEmail = userEmail?.match(/^driver\d{1,2}@citybus\.gov\.in$/);
             
             if (userDoc.exists()) {
               const profile = userDoc.data();
+              let profileRole = profile.role || 'user';
+              if (isAdminEmail) {
+                profileRole = 'admin';
+              } else if (isDriverEmail) {
+                profileRole = 'driver';
+              }
+
+              // Update Firestore if the stored role doesn't match the enforced role
+              if (profile.role !== profileRole) {
+                try {
+                  await updateDoc(userDocRef, { role: profileRole });
+                  profile.role = profileRole;
+                } catch (updateErr) {
+                  console.warn('Firestore role update failed:', updateErr.message);
+                }
+              }
+
               setUserProfile(profile);
-              setRole(profile.role || 'user');
+              setRole(profileRole);
             } else {
+              let initialRole = 'user';
+              if (isAdminEmail) {
+                initialRole = 'admin';
+              } else if (isDriverEmail) {
+                initialRole = 'driver';
+              }
+
               const newProfile = {
                 id: user.uid,
                 name: user.displayName || user.email.split('@')[0],
                 email: user.email,
                 phone: user.phoneNumber || '',
-                role: 'user',
+                role: initialRole,
                 favoriteRouteIds: [],
                 createdAt: new Date().toISOString(),
                 isActive: true
@@ -73,7 +121,7 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('citybus_mock_user', JSON.stringify({ uid: user.uid, ...newProfile }));
               }
               setUserProfile(newProfile);
-              setRole('user');
+              setRole(initialRole);
             }
           } catch (error) {
             console.warn("Firestore read failed, using local fallback:", error.message);
@@ -120,15 +168,16 @@ export const AuthProvider = ({ children }) => {
         const user = userCredential.user;
         
         let userRole = 'user';
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          userRole = userDoc.exists() ? (userDoc.data().role || 'user') : 'user';
-        } catch (fsError) {
-          console.warn('Firestore read failed during login, detecting role from email:', fsError.message);
-          if (lowercaseEmail === 'admin@citybus.in') {
-            userRole = 'admin';
-          } else if (lowercaseEmail.match(/^driver\d{1,2}@citybus\.gov\.in$/)) {
-            userRole = 'driver';
+        if (lowercaseEmail === 'admin@citybus.in') {
+          userRole = 'admin';
+        } else if (lowercaseEmail.match(/^driver\d{1,2}@citybus\.gov\.in$/)) {
+          userRole = 'driver';
+        } else {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            userRole = userDoc.exists() ? (userDoc.data().role || 'user') : 'user';
+          } catch (fsError) {
+            console.warn('Firestore read failed during login, detecting role from email:', fsError.message);
           }
         }
         
@@ -227,6 +276,12 @@ export const AuthProvider = ({ children }) => {
       const user = userCredential.user;
       
       let userRole = 'user';
+      const userEmail = user.email?.toLowerCase().trim();
+      const isAdminEmail = userEmail === 'admin@citybus.in';
+
+      if (isAdminEmail) {
+        userRole = 'admin';
+      }
 
       try {
         const userDocRef = doc(db, 'users', user.uid);
@@ -238,7 +293,7 @@ export const AuthProvider = ({ children }) => {
             name: user.displayName || user.email.split('@')[0],
             email: user.email,
             phone: '',
-            role: 'user',
+            role: userRole,
             favoriteRouteIds: [],
             createdAt: new Date().toISOString(),
             isActive: true
@@ -250,10 +305,29 @@ export const AuthProvider = ({ children }) => {
           }
           setUserProfile(newProfile);
         } else {
-          userRole = userDoc.data().role || 'user';
+          const profile = userDoc.data();
+          let profileRole = profile.role || 'user';
+          if (isAdminEmail) {
+            profileRole = 'admin';
+          }
+          
+          if (profile.role !== profileRole) {
+            try {
+              await updateDoc(userDocRef, { role: profileRole });
+              profile.role = profileRole;
+            } catch (uErr) {
+              console.warn('Firestore role update failed for Google user:', uErr.message);
+            }
+          }
+          
+          setUserProfile(profile);
+          userRole = profileRole;
         }
       } catch (fsError) {
         console.warn('Firestore read failed for Google user:', fsError.message);
+        if (isAdminEmail) {
+          userRole = 'admin';
+        }
       }
 
       toast.success('Signed in with Google!');
@@ -273,14 +347,15 @@ export const AuthProvider = ({ children }) => {
     if (isFirebaseEnabled) {
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        
+        const lowercaseEmail = email.toLowerCase().trim();
+        const initialRole = lowercaseEmail === 'admin@citybus.in' ? 'admin' : 'user';
+
         const newProfile = {
           id: user.uid,
           name,
           email,
           phone,
-          role: 'user',
+          role: initialRole,
           favoriteRouteIds: [],
           createdAt: new Date().toISOString(),
           isActive: true
@@ -295,10 +370,10 @@ export const AuthProvider = ({ children }) => {
 
         setCurrentUser(user);
         setUserProfile(newProfile);
-        setRole('user');
+        setRole(initialRole);
         
         toast.success('Account created successfully!');
-        handleRedirect('user');
+        handleRedirect(initialRole);
         return user;
       } catch (error) {
         throw error;
@@ -391,7 +466,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     signInWithGoogle,
-    isMock: !isFirebaseEnabled
+    isMock: !isFirebaseEnabled,
+    theme,
+    toggleTheme
   };
 
   return (

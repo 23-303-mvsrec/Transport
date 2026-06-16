@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { MobileFrame } from '../user/MobileFrame';
@@ -6,7 +6,7 @@ import { BottomNav } from '../user/BottomNav';
 import { UserHeader } from '../user/UserHeader';
 import { AdminSidebar } from '../admin/AdminSidebar';
 import { AdminNavbar } from '../admin/AdminNavbar';
-import { Bus, Power, User, ShieldCheck } from 'lucide-react';
+import { Bus, Power, User, ShieldCheck, Sun, Moon } from 'lucide-react';
 
 // PASSENGER LAYOUT
 export const UserLayout = () => {
@@ -40,7 +40,8 @@ export const UserLayout = () => {
 
 // DRIVER LAYOUT
 export const DriverLayout = () => {
-  const { currentUser, role, logout } = useAuth();
+  const { currentUser, role, logout, theme, toggleTheme } = useAuth();
+  const isDark = theme === 'dark';
   
   if (!currentUser) {
     return <Navigate to="/driver/login" replace />;
@@ -54,8 +55,10 @@ export const DriverLayout = () => {
   return (
     <MobileFrame>
       {/* Driver Header */}
-      <header className="bg-slate-900 border-b border-slate-800 px-5 py-4 flex items-center justify-between text-white sticky top-0 z-30 shadow-md">
-        <div className="flex items-center gap-2">
+      <header className={`border-b px-5 py-4 flex items-center justify-between sticky top-0 z-30 shadow-md transition-colors duration-300 ${
+        isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-150 text-slate-850'
+      }`}>
+        <div className="flex items-center gap-2 text-left">
           <div className="bg-emerald-500 text-slate-950 p-1.5 rounded-lg">
             <Bus size={18} strokeWidth={2.5} />
           </div>
@@ -68,18 +71,35 @@ export const DriverLayout = () => {
           </div>
         </div>
         
-        {/* Simple Logout Capsule */}
-        <button 
-          onClick={logout}
-          className="bg-slate-800 hover:bg-rose-900 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
-        >
-          <Power size={13} />
-          <span>Exit</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className={`p-2 rounded-lg transition-colors duration-200 ${
+              isDark ? 'bg-slate-800 hover:bg-slate-700 text-yellow-400' : 'bg-slate-100 hover:bg-slate-200 text-amber-600'
+            }`}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {isDark ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
+
+          {/* Simple Logout Capsule */}
+          <button 
+            onClick={logout}
+            className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors duration-200 ${
+              isDark ? 'bg-slate-800 hover:bg-rose-900 text-slate-300 hover:text-white' : 'bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-650'
+            }`}
+          >
+            <Power size={13} />
+            <span>Exit</span>
+          </button>
+        </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto bg-slate-950 no-scrollbar text-white">
-        <Outlet />
+      <main className={`flex-1 overflow-y-auto no-scrollbar transition-colors duration-300 ${
+        isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'
+      }`}>
+        <Outlet context={{ theme }} />
       </main>
     </MobileFrame>
   );
@@ -87,7 +107,8 @@ export const DriverLayout = () => {
 
 // ADMIN LAYOUT
 export const AdminLayout = () => {
-  const { currentUser, role } = useAuth();
+  const { currentUser, role, theme } = useAuth();
+  const isDark = theme === 'dark';
   const location = useLocation();
   
   if (!currentUser) {
@@ -111,7 +132,9 @@ export const AdminLayout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-100 font-sans overflow-hidden">
+    <div className={`flex h-screen font-sans overflow-hidden transition-colors duration-300 ${
+      isDark ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-805'
+    }`}>
       {/* Sidebar */}
       <AdminSidebar />
 
@@ -121,8 +144,10 @@ export const AdminLayout = () => {
         <AdminNavbar title={getHeaderTitle()} />
 
         {/* Scrollable page views */}
-        <main className="flex-1 overflow-y-auto p-8 bg-slate-50 no-scrollbar">
-          <Outlet />
+        <main className={`flex-1 overflow-y-auto p-8 no-scrollbar transition-colors duration-300 ${
+          isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-800'
+        }`}>
+          <Outlet context={{ theme }} />
         </main>
       </div>
     </div>

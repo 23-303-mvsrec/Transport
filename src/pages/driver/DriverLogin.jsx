@@ -3,12 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { db, isFirebaseEnabled } from '../../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Compass, Mail, Lock, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { Compass, Mail, Lock, ArrowLeft, ShieldAlert, Sun, Moon } from 'lucide-react';
 import { Spinner } from '../../components/shared/Loader';
 import toast from 'react-hot-toast';
 
 export const DriverLogin = () => {
-  const { login } = useAuth();
+  const { login, theme, toggleTheme } = useAuth();
+  const isDark = theme === 'dark';
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,14 +56,34 @@ export const DriverLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+      
+      {/* Floating Theme Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <button
+          onClick={toggleTheme}
+          className={`p-3 rounded-full shadow-lg border transition-all duration-300 hover:scale-110 flex items-center justify-center ${
+            isDark 
+              ? 'bg-slate-900 border-slate-800 text-yellow-400 hover:bg-slate-800' 
+              : 'bg-white border-slate-200 text-amber-600 hover:bg-slate-50 shadow-md'
+          }`}
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </div>
+
       {/* Device frame mock container */}
-      <div className="w-full max-w-[400px] bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl text-white flex flex-col relative">
+      <div className={`w-full max-w-[400px] border rounded-3xl p-6 shadow-2xl transition-colors duration-300 ${
+        isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'
+      } flex flex-col relative`}>
         
         {/* Back Link */}
         <Link 
           to="/login"
-          className="absolute top-5 left-5 text-slate-400 hover:text-white flex items-center gap-1 text-xs font-semibold"
+          className={`absolute top-5 left-5 flex items-center gap-1 text-xs font-semibold transition ${
+            isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
+          }`}
         >
           <ArrowLeft size={14} /> Back
         </Link>
@@ -73,13 +94,15 @@ export const DriverLogin = () => {
             <Compass size={32} className="stroke-[2.5] animate-spin" style={{ animationDuration: '8s' }} />
           </div>
           <h1 className="text-xl font-extrabold tracking-tight">Driver Portal</h1>
-          <p className="text-xs text-slate-400 mt-1">Hyderabad Transit Dispatch Desk</p>
+          <p className={`text-xs mt-1 transition ${isDark ? 'text-slate-400' : 'text-slate-555'}`}>Hyderabad Transit Dispatch Desk</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleDriverLogin} className="space-y-4 text-xs font-semibold">
           <div className="space-y-1.5">
-            <label className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">Government Email</label>
+            <label className={`uppercase tracking-wider text-[9px] font-bold transition ${
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            }`}>Government Email</label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
                 <Mail size={16} />
@@ -89,13 +112,17 @@ export const DriverLogin = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="e.g. driver1@citybus.gov.in"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-11 pr-4 focus:border-emerald-500 focus:outline-none transition text-white"
+                className={`w-full border rounded-xl py-3 pl-11 pr-4 focus:border-emerald-500 focus:outline-none transition ${
+                  isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                }`}
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-slate-400 uppercase tracking-wider text-[9px] font-bold">Operator Password</label>
+            <label className={`uppercase tracking-wider text-[9px] font-bold transition ${
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            }`}>Operator Password</label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
                 <Lock size={16} />
@@ -105,10 +132,12 @@ export const DriverLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-11 pr-4 focus:border-emerald-500 focus:outline-none transition text-white"
+                className={`w-full border rounded-xl py-3 pl-11 pr-4 focus:border-emerald-500 focus:outline-none transition ${
+                  isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                }`}
               />
             </div>
-            <p className="text-[9px] text-slate-500 mt-1">Driver logins are created by the fleet administrator.</p>
+            <p className={`text-[9px] mt-1 transition ${isDark ? 'text-slate-500' : 'text-slate-450'}`}>Driver logins are created by the fleet administrator.</p>
           </div>
 
           <button
@@ -120,10 +149,12 @@ export const DriverLogin = () => {
           </button>
         </form>
 
-        <div className="text-center mt-6 pt-4 border-t border-slate-800">
+        <div className={`text-center mt-6 pt-4 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
           <Link
             to="/login"
-            className="text-xs text-slate-400 hover:text-white transition font-semibold"
+            className={`text-xs font-semibold transition ${
+              isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
+            }`}
           >
             ← Back to Passenger App
           </Link>

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Bus, Mail, Lock, User, Phone, ArrowRight, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Bus, Mail, Lock, User, Phone, ArrowRight, ShieldCheck, HelpCircle, Sun, Moon } from 'lucide-react';
 import { Spinner } from '../../components/shared/Loader';
 import toast from 'react-hot-toast';
 
 export const Login = () => {
-  const { login, signup, signInWithGoogle, isLoading } = useAuth();
+  const { login, signup, signInWithGoogle, isLoading, theme, toggleTheme } = useAuth();
+  const isDark = theme === 'dark';
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -87,9 +88,27 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+      
+      {/* Floating Theme Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <button
+          onClick={toggleTheme}
+          className={`p-3 rounded-full shadow-lg border transition-all duration-300 hover:scale-110 flex items-center justify-center ${
+            isDark 
+              ? 'bg-slate-900 border-slate-800 text-yellow-400 hover:bg-slate-800' 
+              : 'bg-white border-slate-200 text-amber-600 hover:bg-slate-50 shadow-md'
+          }`}
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </div>
+
       {/* Container */}
-      <div className="w-full max-w-[420px] bg-slate-950/90 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl text-slate-100 flex flex-col relative">
+      <div className={`w-full max-w-[420px] border rounded-3xl overflow-hidden shadow-2xl transition-colors duration-300 ${
+        isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+      } flex flex-col relative`}>
         
         {/* Blue Header Accent */}
         <div className="bg-primary px-6 py-6 text-center flex flex-col items-center gap-2 relative">
@@ -103,14 +122,18 @@ export const Login = () => {
         {/* Form area */}
         <div className="p-6 space-y-5">
           {/* Custom Navigation Tabs */}
-          <div className="grid grid-cols-2 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800">
+          <div className={`grid grid-cols-2 p-1.5 rounded-2xl border transition-colors duration-300 ${
+            isDark ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-100 border-slate-200'
+          }`}>
             <button
               onClick={() => {
                 setIsSignUp(false);
                 resetFormState();
               }}
               className={`py-2 text-xs font-bold rounded-xl transition ${
-                !isSignUp ? 'bg-primary text-white shadow-md' : 'text-slate-400 hover:text-white'
+                !isSignUp 
+                  ? 'bg-primary text-white shadow-md' 
+                  : (isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800')
               }`}
             >
               Login
@@ -118,7 +141,9 @@ export const Login = () => {
             <button
               onClick={() => setIsSignUp(true)}
               className={`py-2 text-xs font-bold rounded-xl transition ${
-                isSignUp ? 'bg-primary text-white shadow-md' : 'text-slate-400 hover:text-white'
+                isSignUp 
+                  ? 'bg-primary text-white shadow-md' 
+                  : (isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800')
               }`}
             >
               Sign Up
@@ -128,7 +153,7 @@ export const Login = () => {
           <form onSubmit={handleAuth} className="space-y-4 text-xs font-semibold">
             {isSignUp && (
               <div className="space-y-1">
-                <label className="text-slate-400">Full Name</label>
+                <label className={isDark ? 'text-slate-400' : 'text-slate-600'}>Full Name</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
                     <User size={16} />
@@ -138,14 +163,16 @@ export const Login = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Jaspreet Singh"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-white focus:border-primary focus:outline-none transition"
+                    className={`w-full border rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-primary transition ${
+                      isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                    }`}
                   />
                 </div>
               </div>
             )}
 
             <div className="space-y-1">
-              <label className="text-slate-400">Email Address or 10-Digit Phone</label>
+              <label className={isDark ? 'text-slate-400' : 'text-slate-600'}>Email Address or 10-Digit Phone</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
                   {/^\d+$/.test(emailOrPhone) ? <Phone size={16} /> : <Mail size={16} />}
@@ -155,14 +182,16 @@ export const Login = () => {
                   value={emailOrPhone}
                   onChange={(e) => setEmailOrPhone(e.target.value)}
                   placeholder="e.g. name@domain.com or 9876543210"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-white focus:border-primary focus:outline-none transition"
+                  className={`w-full border rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-primary transition ${
+                    isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                  }`}
                 />
               </div>
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label className="text-slate-400">Password</label>
+                <label className={isDark ? 'text-slate-400' : 'text-slate-600'}>Password</label>
                 {!isSignUp && (
                   <Link to="/forgot-password" className="text-[10px] text-primary hover:underline font-bold">
                     Forgot Password?
@@ -178,7 +207,9 @@ export const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-white focus:border-primary focus:outline-none transition"
+                  className={`w-full border rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-primary transition ${
+                    isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                  }`}
                 />
               </div>
             </div>
@@ -186,7 +217,7 @@ export const Login = () => {
             {isSignUp && (
               <>
                 <div className="space-y-1">
-                  <label className="text-slate-400">Confirm Password</label>
+                  <label className={isDark ? 'text-slate-400' : 'text-slate-600'}>Confirm Password</label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
                       <Lock size={16} />
@@ -196,7 +227,9 @@ export const Login = () => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-white focus:border-primary focus:outline-none transition"
+                      className={`w-full border rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-primary transition ${
+                        isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                      }`}
                     />
                   </div>
                 </div>
@@ -207,9 +240,13 @@ export const Login = () => {
                     id="terms"
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
-                    className="accent-primary h-4 w-4 rounded border-slate-800 bg-slate-900 mt-0.5 cursor-pointer"
+                    className={`accent-primary h-4 w-4 rounded mt-0.5 cursor-pointer ${
+                      isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-300 bg-white'
+                    }`}
                   />
-                  <label htmlFor="terms" className="text-[10px] text-slate-400 leading-normal cursor-pointer select-none">
+                  <label htmlFor="terms" className={`text-[10px] leading-normal cursor-pointer select-none ${
+                    isDark ? 'text-slate-400' : 'text-slate-600'
+                  }`}>
                     I agree to the CityBus Terms of Service and Privacy Policy for GPS mapping and tracking services.
                   </label>
                 </div>
@@ -234,14 +271,18 @@ export const Login = () => {
 
           {/* Google SSO */}
           <div className="flex items-center my-4">
-            <div className="flex-1 border-t border-slate-800"></div>
-            <span className="px-3 text-[9px] text-slate-500 font-bold uppercase tracking-wider">Or continue with</span>
-            <div className="flex-1 border-t border-slate-800"></div>
+            <div className={`flex-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}></div>
+            <span className={`px-3 text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Or continue with</span>
+            <div className={`flex-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}></div>
           </div>
 
           <button
             onClick={handleGoogleSignIn}
-            className="w-full bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 py-3 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition flex items-center justify-center gap-2 shadow-sm"
+            className={`w-full border py-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm ${
+              isDark 
+                ? 'bg-slate-900 hover:bg-slate-850 border-slate-800 text-slate-200 hover:text-white' 
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:text-slate-900'
+            }`}
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -265,10 +306,14 @@ export const Login = () => {
           </button>
 
           {/* Quick instructions / driver path */}
-          <div className="text-center pt-4 border-t border-slate-900/60 mt-4 flex flex-col gap-3">
+          <div className={`text-center pt-4 border-t mt-4 flex flex-col gap-3 ${
+            isDark ? 'border-slate-800' : 'border-slate-100'
+          }`}>
             <Link
               to="/driver/login"
-              className="text-xs text-emerald-400 hover:underline font-bold inline-flex items-center justify-center gap-1"
+              className={`text-xs hover:underline font-bold inline-flex items-center justify-center gap-1 ${
+                isDark ? 'text-emerald-400' : 'text-emerald-600'
+              }`}
             >
               <ShieldCheck size={13} />
               Driver Console Login →

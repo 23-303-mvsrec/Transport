@@ -92,3 +92,128 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite linear;
 }
+
+/* ==================== PREMIUM DARK THEME OVERRIDES ==================== */
+
+html.dark, html.dark body {
+  background-color: #020617 !important;
+  color: #f8fafc !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Base element color overrides */
+html.dark .bg-white {
+  background-color: #0f172a !important;
+}
+
+html.dark .bg-slate-50 {
+  background-color: #020617 !important;
+}
+
+html.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+
+html.dark .bg-slate-200 {
+  background-color: #334155 !important;
+}
+
+/* Text color contrast adjustments */
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700,
+html.dark .text-slate-650 {
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-slate-600,
+html.dark .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-primary,
+html.dark .text-primary-hover {
+  color: #60a5fa !important;
+}
+
+html.dark .text-secondary {
+  color: #2dd4bf !important;
+}
+
+html.dark .text-emerald-600 {
+  color: #34d399 !important;
+}
+
+html.dark .text-emerald-700 {
+  color: #10b981 !important;
+}
+
+/* Border adjustments */
+html.dark .border-slate-50,
+html.dark .border-slate-100,
+html.dark .border-slate-150,
+html.dark .border-slate-200 {
+  border-color: #1e293b !important;
+}
+
+/* Inputs, drop-downs & focus controls */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #0b1329 !important;
+  color: #ffffff !important;
+  border-color: #1e293b !important;
+}
+
+html.dark select option {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+html.dark input::placeholder {
+  color: #64748b !important;
+}
+
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #1e293b !important;
+}
+
+/* Leaflet dark theme map filter */
+html.dark .leaflet-container, 
+html.dark .leaflet-tile-container {
+  filter: invert(95%) hue-rotate(180deg) brightness(90%) contrast(90%) !important;
+}
+
+html.dark .leaflet-bar a {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border-bottom-color: #1e293b !important;
+}
+
+/* Badge dark mode adaptations */
+html.dark .inline-flex.border {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .inline-flex.bg-primary-light {
+  color: #60a5fa !important;
+}
+
+html.dark .inline-flex.bg-emerald-50 {
+  color: #34d399 !important;
+}
+
+html.dark .inline-flex.bg-amber-50 {
+  color: #fbbf24 !important;
+}
+
+html.dark .inline-flex.bg-rose-50 {
+  color: #f87171 !important;
+}
+

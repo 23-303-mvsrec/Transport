@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth, isFirebaseEnabled } from '../../services/firebase';
-import { Bus, Mail, ArrowLeft, Send } from 'lucide-react';
+import { Bus, Mail, ArrowLeft, Send, Sun, Moon } from 'lucide-react';
 import { Spinner } from '../../components/shared/Loader';
+import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export const ForgotPassword = () => {
+  const { theme, toggleTheme } = useAuth();
+  const isDark = theme === 'dark';
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -36,13 +39,33 @@ export const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-[400px] bg-slate-950/90 border border-slate-800 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-slate-100 flex flex-col relative">
+    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+      
+      {/* Floating Theme Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <button
+          onClick={toggleTheme}
+          className={`p-3 rounded-full shadow-lg border transition-all duration-300 hover:scale-110 flex items-center justify-center ${
+            isDark 
+              ? 'bg-slate-900 border-slate-800 text-yellow-400 hover:bg-slate-800' 
+              : 'bg-white border-slate-200 text-amber-600 hover:bg-slate-50 shadow-md'
+          }`}
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </div>
+
+      <div className={`w-full max-w-[400px] border rounded-3xl p-6 shadow-2xl transition-colors duration-300 ${
+        isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+      } flex flex-col relative`}>
         
         {/* Back Link */}
         <Link 
           to="/login"
-          className="absolute top-5 left-5 text-slate-400 hover:text-white flex items-center gap-1 text-xs font-semibold"
+          className={`absolute top-5 left-5 flex items-center gap-1 text-xs font-semibold transition ${
+            isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
+          }`}
         >
           <ArrowLeft size={14} /> Back
         </Link>
@@ -53,20 +76,26 @@ export const ForgotPassword = () => {
             <Bus size={28} className="stroke-[2.5]" />
           </div>
           <h1 className="text-xl font-extrabold tracking-tight">Reset Password</h1>
-          <p className="text-xs text-slate-400 mt-1">Hyderabad CityBus Account</p>
+          <p className={`text-xs mt-1 transition ${isDark ? 'text-slate-400' : 'text-slate-555'}`}>Hyderabad CityBus Account</p>
         </div>
 
         {sent ? (
           <div className="space-y-4 text-center">
-            <div className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-2xl p-4 text-xs font-semibold">
+            <div className={`border rounded-2xl p-4 text-xs font-semibold ${
+              isDark ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            }`}>
               <p>
-                A password reset hyperlink has been dispatched to <span className="text-white font-bold">{email}</span>. 
+                A password reset hyperlink has been dispatched to <span className={isDark ? 'text-white font-bold' : 'text-slate-900 font-bold'}>{email}</span>. 
                 Please inspect your inbox folders.
               </p>
             </div>
             <Link
               to="/login"
-              className="w-full bg-slate-900 hover:bg-slate-850 py-3 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition block"
+              className={`w-full py-3 rounded-xl text-xs font-bold transition block ${
+                isDark 
+                  ? 'bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white' 
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900'
+              }`}
             >
               Return to Login Screen
             </Link>
@@ -74,7 +103,7 @@ export const ForgotPassword = () => {
         ) : (
           <form onSubmit={handleReset} className="space-y-4 text-xs font-semibold">
             <div className="space-y-1">
-              <label className="text-slate-400">Account Email Address</label>
+              <label className={isDark ? 'text-slate-400' : 'text-slate-650'}>Account Email Address</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
                   <Mail size={16} />
@@ -84,7 +113,9 @@ export const ForgotPassword = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. name@domain.com"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl py-3 pl-11 pr-4 focus:border-primary focus:outline-none transition text-white"
+                  className={`w-full border rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-primary transition ${
+                    isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                  }`}
                 />
               </div>
             </div>

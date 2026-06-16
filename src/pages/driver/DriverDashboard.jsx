@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBuses } from '../../contexts/BusContext';
 import { useGeolocation } from '../../hooks/useGeolocation';
@@ -7,6 +8,8 @@ import { seedDrivers, seedRoutes } from '../../services/seedData';
 import { haversineDistance } from '../../utils/geoUtils';
 import { db, isFirebaseEnabled } from '../../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import Badge from '../../components/shared/Badge';
+import MapFallback from '../../components/shared/MapFallback';
 import { 
   Bus, 
   Compass, 
@@ -26,6 +29,8 @@ import {
 import toast from 'react-hot-toast';
 
 export const DriverDashboard = () => {
+  const { theme } = useOutletContext();
+  const isDark = theme === 'dark';
   const { currentUser, logout } = useAuth();
   const { buses, routes, stops } = useBuses();
 
@@ -37,15 +42,24 @@ export const DriverDashboard = () => {
 
   // GPS position hook
   const { 
-    position, 
-    accuracy, 
-    speed, 
-    heading, 
+    position: realPosition, 
+    accuracy: realAccuracy, 
+    speed: realSpeed, 
+    heading: realHeading, 
     error: gpsError, 
     isTracking, 
     startTracking, 
     stopTracking 
   } = useGeolocation();
+
+  const [simulatedGps, setSimulatedGps] = useState(false);
+  const [mockPosition, setMockPosition] = useState(null);
+  const [mockAccuracy, setMockAccuracy] = useState(null);
+
+  const position = simulatedGps ? mockPosition : realPosition;
+  const accuracy = simulatedGps ? mockAccuracy : realAccuracy;
+  const speed = simulatedGps ? 0 : realSpeed;
+  const heading = simulatedGps ? 0 : realHeading;
 
   // Permission and https states
   const [gpsPermission, setGpsPermission] = useState('prompt');
@@ -103,6 +117,17 @@ export const DriverDashboard = () => {
           }
         } catch (e) {
           console.error("Firestore driver fetch failed, reverting to seeds:", e);
+        }
+      }
+
+      if (!matchedDriver && currentUser.email) {
+        const emailLower = currentUser.email.toLowerCase();
+        const numMatch = emailLower.match(/driver(\d{1,2})/);
+        if (numMatch) {
+          const idx = parseInt(numMatch[1]) - 1;
+          if (idx >= 0 && idx < seedDrivers.length) {
+            matchedDriver = seedDrivers[idx];
+          }
         }
       }
 
@@ -275,7 +300,9 @@ export const DriverDashboard = () => {
   }
 
   return (
-    <div className="p-5 space-y-5 select-none pb-12 bg-slate-950 min-h-full">
+    <div className={`p-5 space-y-5 select-none pb-12 min-h-full transition-colors duration-300 ${
+      isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-800'
+    }`}>
       
       {/* HTTPS Warning Alert */}
       {httpsWarning && (
@@ -291,38 +318,44 @@ export const DriverDashboard = () => {
       )}
 
       {/* Roster profiles / Top Indicators */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-left shadow-lg">
+      <div className={`border rounded-2xl p-4 text-left shadow-lg transition-colors duration-300 ${
+        isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'
+      }`}>
         <div className="flex justify-between items-center mb-2">
           <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Active duty</span>
           <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/20">
             {assignedBus?.number || 'PB-11-K-1001'}
           </span>
         </div>
-        <h2 className="text-base font-bold text-white">{driverProfile?.name || 'Duty Operator'}</h2>
-        <p className="text-xs text-slate-400">Licence: {driverProfile?.licenseNumber || 'PB-11-XXXX'}</p>
+        <h2 className={`text-base font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-800'}`}>{driverProfile?.name || 'Duty Operator'}</h2>
+        <p className={`text-xs transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>Licence: {driverProfile?.licenseNumber || 'PB-11-XXXX'}</p>
       </div>
 
       {/* STATE IDLE */}
       {tripState === 'idle' && (
         <div className="space-y-5">
           {/* Roster Grid */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg space-y-4">
+          <div className={`border rounded-3xl p-5 shadow-lg space-y-4 transition-colors duration-300 ${
+            isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
             <span className="text-[10px] font-bold text-slate-500 uppercase block">Duty Assignment</span>
             
             <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
               <div>
                 <span className="text-[9px] text-slate-500 block mb-0.5">ASSIGNED BUS</span>
-                <span className="text-slate-200 block truncate">{assignedBus?.number || 'PB-11-K-1001'}</span>
+                <span className={`block truncate transition-colors duration-300 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{assignedBus?.number || 'PB-11-K-1001'}</span>
               </div>
               <div>
                 <span className="text-[9px] text-slate-500 block mb-0.5">TRANSIT LINE</span>
-                <span className="text-slate-200 block truncate">{assignedRoute?.number || 'R-01'}</span>
+                <span className={`block truncate transition-colors duration-300 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{assignedRoute?.number || 'R-01'}</span>
               </div>
             </div>
 
             {/* GPS Lock status */}
-            <div className="border-t border-slate-800 pt-3.5 flex items-center justify-between text-xs">
-              <span className="text-slate-400">GPS Lock:</span>
+            <div className={`border-t pt-3.5 flex items-center justify-between text-xs transition-colors duration-300 ${
+              isDark ? 'border-slate-800' : 'border-slate-100'
+            }`}>
+              <span className={`${isDark ? 'text-slate-400' : 'text-slate-555'}`}>GPS Lock:</span>
               <div className="flex items-center gap-1.5">
                 <span className={`w-2.5 h-2.5 rounded-full ${accuracy ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}`} />
                 <span className={accuracyBadge.color}>{accuracyBadge.text} {accuracy && `(±${Math.round(accuracy)}m)`}</span>
@@ -341,34 +374,59 @@ export const DriverDashboard = () => {
             {accuracy > 50 && (
               <p className="text-[9px] text-amber-500 text-center font-bold">GPS accuracy is too poor to initialize (required under 50m).</p>
             )}
+            {(!accuracy || accuracy > 50) && (
+              <button
+                type="button"
+                onClick={() => {
+                  const firstStopId = assignedRoute?.stopIds?.[0];
+                  const firstStop = firstStopId ? stops.find(s => s.id === firstStopId) : null;
+                  const loc = firstStop?.location || firstStop || { lat: 17.3850, lng: 78.4867 };
+                  setMockPosition({ lat: loc.lat, lng: loc.lng });
+                  setMockAccuracy(5);
+                  setSimulatedGps(true);
+                  toast.success("Simulated GPS Fix activated!");
+                }}
+                className={`w-full py-3.5 rounded-xl text-xs font-black transition mt-1 duration-300 ${
+                  isDark ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-emerald-700'
+                }`}
+              >
+                Simulate Location (Developer Bypass)
+              </button>
+            )}
           </div>
         </div>
       )}
 
       {/* STATE STARTING CONFIRMATION */}
       {tripState === 'starting' && (
-        <div className="bg-slate-900 border border-slate-850 rounded-3xl p-5 shadow-xl space-y-4">
+        <div className={`border rounded-3xl p-5 shadow-xl space-y-4 transition-colors duration-300 ${
+          isDark ? 'bg-slate-900 border-slate-850 text-white' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
           <div className="flex justify-between items-center">
-            <h4 className="font-extrabold text-sm text-slate-200">Trip Initialization</h4>
+            <h4 className={`font-extrabold text-sm transition-colors duration-300 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Trip Initialization</h4>
             <button 
               onClick={() => setTripState('idle')}
-              className="text-xs text-slate-400 hover:text-white"
+              className={`text-xs transition-colors duration-300 ${
+                isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'
+              }`}
             >
               Cancel
             </button>
           </div>
 
-          <div className="space-y-4 text-xs font-semibold">
-            <p className="text-slate-400 leading-normal">
-              Confirm starting journey for bus <span className="text-emerald-400 font-bold">{assignedBus?.number}</span> on line <span className="text-white font-bold">{assignedRoute?.number}</span>.
+          <div className="space-y-4 text-xs font-semibold text-left">
+            <p className={`transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-600'} leading-normal`}>
+              Confirm starting journey for bus <span className="text-emerald-500 font-bold">{assignedBus?.number}</span> on line <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{assignedRoute?.number}</span>.
             </p>
 
             <div className="space-y-1">
-              <label className="text-slate-400 uppercase text-[9px] font-bold">Starting stop</label>
+              <label className={`uppercase text-[9px] font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Starting stop</label>
               <select
                 value={startStopId}
                 onChange={(e) => setStartStopId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white font-bold outline-none"
+                className={`w-full border rounded-xl py-3 px-4 font-bold outline-none transition-colors duration-300 ${
+                  isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                }`}
               >
                 {assignedRoute?.stopIds.map(sid => (
                   <option key={sid} value={sid}>{sid}</option>
@@ -390,8 +448,10 @@ export const DriverDashboard = () => {
       {tripState === 'on-trip' && (
         <div className="space-y-5 text-left">
           {/* LIVE indicator top */}
-          <div className="bg-rose-950/20 border border-rose-900 rounded-2xl p-3 flex justify-between items-center text-xs">
-            <div className="flex items-center gap-2 text-rose-400 font-bold">
+          <div className={`border rounded-2xl p-3 flex justify-between items-center text-xs transition-colors duration-300 ${
+            isDark ? 'bg-rose-950/20 border-rose-900' : 'bg-rose-50 border-rose-100'
+          }`}>
+            <div className={`flex items-center gap-2 font-bold ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>
               <span className="h-2 w-2 bg-rose-500 rounded-full animate-ping" />
               <span>GPS BROADCASTING LIVE</span>
             </div>
@@ -400,44 +460,54 @@ export const DriverDashboard = () => {
 
           {/* Telemetry live stats */}
           <div className="grid grid-cols-2 gap-3.5">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
+            <div className={`border rounded-2xl p-4 text-center transition-colors duration-300 ${
+              isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+            }`}>
               <Compass size={20} className="mx-auto text-primary animate-spin" style={{ animationDuration: '6s' }} />
-              <span className="text-[8px] text-slate-400 font-bold uppercase block mt-1.5">Speed</span>
-              <span className="text-base font-black text-white">{speed || 0} km/h</span>
+              <span className={`text-[8px] font-bold uppercase block mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Speed</span>
+              <span className={`text-base font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>{speed || 0} km/h</span>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
+            <div className={`border rounded-2xl p-4 text-center transition-colors duration-300 ${
+              isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+            }`}>
               <Users size={20} className="mx-auto text-secondary" />
-              <span className="text-[8px] text-slate-400 font-bold uppercase block mt-1.5">Passengers</span>
-              <span className="text-base font-black text-white">{occupancy}</span>
+              <span className={`text-[8px] font-bold uppercase block mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Passengers</span>
+              <span className={`text-base font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>{occupancy}</span>
             </div>
           </div>
 
           {/* Location debug logs */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 text-[9px] font-mono text-slate-500 flex justify-between">
+          <div className={`border rounded-2xl p-3.5 text-[9px] font-mono flex justify-between transition-colors duration-300 ${
+            isDark ? 'bg-slate-900 border-slate-800 text-slate-500' : 'bg-white border-slate-200 text-slate-650 shadow-sm'
+          }`}>
             <span>Accuracy: ±{accuracy ? Math.round(accuracy) : '0'}m</span>
             <span>Distance: {tripDistance.toFixed(2)} km</span>
             <span>Fix: {position ? `${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}` : 'Locking...'}</span>
           </div>
 
           {/* Passengers count adjust button capsule */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex justify-between items-center">
+          <div className={`border rounded-3xl p-5 flex justify-between items-center transition-colors duration-300 ${
+            isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
             <div className="space-y-0.5 text-left">
               <span className="text-[9px] font-bold text-slate-500 uppercase">Passenger Logging</span>
-              <p className="text-xs font-bold text-slate-200">Adjust Seats Filled</p>
+              <p className={`text-xs font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Adjust Seats Filled</p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => adjustOccupancy(-5)}
                 disabled={occupancy <= 0}
-                className="h-12 w-12 rounded-xl bg-slate-800 hover:bg-slate-755 flex items-center justify-center text-white text-lg font-bold disabled:opacity-40"
+                className={`h-12 w-12 rounded-xl flex items-center justify-center text-lg font-bold disabled:opacity-40 transition-colors duration-200 ${
+                  isDark ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
               >
                 <Minus size={18} />
               </button>
               <button
                 onClick={() => adjustOccupancy(5)}
                 disabled={occupancy >= 52}
-                className="h-12 w-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-slate-950 text-lg font-bold disabled:opacity-40"
+                className="h-12 w-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-slate-950 text-lg font-bold disabled:opacity-40 transition-colors"
               >
                 <Plus size={18} />
               </button>
@@ -445,7 +515,9 @@ export const DriverDashboard = () => {
           </div>
 
           {/* Live map mini view */}
-          <div className="h-40 bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden relative">
+          <div className={`h-40 rounded-3xl border overflow-hidden relative transition-colors duration-300 ${
+            isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
             <MapFallback activeRouteId={assignedRoute?.id} userLocation={position} />
           </div>
 
@@ -462,28 +534,34 @@ export const DriverDashboard = () => {
 
       {/* STATE ENDING TERMINAL SELECTION */}
       {tripState === 'ending' && (
-        <div className="bg-slate-900 border border-slate-850 rounded-3xl p-5 shadow-xl space-y-4">
+        <div className={`border rounded-3xl p-5 shadow-xl space-y-4 transition-colors duration-300 ${
+          isDark ? 'bg-slate-900 border-slate-850 text-white' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
           <div className="flex justify-between items-center">
-            <h4 className="font-extrabold text-sm text-slate-200">End Journey</h4>
+            <h4 className={`font-extrabold text-sm transition-colors duration-300 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>End Journey</h4>
             <button 
               onClick={() => setTripState('on-trip')}
-              className="text-xs text-slate-400 hover:text-white"
+              className={`text-xs transition-colors duration-300 ${
+                isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'
+              }`}
             >
               Cancel
             </button>
           </div>
 
-          <div className="space-y-4 text-xs font-semibold">
-            <p className="text-slate-400 leading-normal">
-              Specify the ending terminal to finalize trip logs for bus <span className="text-rose-400 font-bold">{assignedBus?.number}</span>.
+          <div className="space-y-4 text-xs font-semibold text-left">
+            <p className={`transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-650'} leading-normal`}>
+              Specify the ending terminal to finalize trip logs for bus <span className="text-rose-500 font-bold">{assignedBus?.number}</span>.
             </p>
 
             <div className="space-y-1">
-              <label className="text-slate-400 uppercase text-[9px] font-bold">Ending Terminal Stop</label>
+              <label className={`uppercase text-[9px] font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ending Terminal Stop</label>
               <select
                 value={endStopId}
                 onChange={(e) => setEndStopId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white font-bold outline-none"
+                className={`w-full border rounded-xl py-3 px-4 font-bold outline-none transition-colors duration-300 ${
+                  isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                }`}
               >
                 {assignedRoute?.stopIds.map(sid => (
                   <option key={sid} value={sid}>{sid}</option>
@@ -503,34 +581,38 @@ export const DriverDashboard = () => {
 
       {/* STATE ENDED / SUMMARY */}
       {tripState === 'ended' && (
-        <div className="bg-slate-900 border border-slate-850 rounded-3xl p-5 shadow-xl space-y-5">
+        <div className={`border rounded-3xl p-5 shadow-xl space-y-5 transition-colors duration-300 ${
+          isDark ? 'bg-slate-900 border-slate-850 text-white' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
           <div className="text-center space-y-2">
             <div className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20">
               <Check size={24} />
             </div>
-            <h4 className="font-extrabold text-base text-slate-100">Journey Ended</h4>
+            <h4 className={`font-extrabold text-base transition-colors duration-300 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Journey Ended</h4>
             <p className="text-[10px] text-slate-400">Duty trip log finalized and synchronized</p>
           </div>
 
-          <div className="bg-slate-950 border border-slate-805 rounded-2xl p-4.5 space-y-3.5 text-xs">
+          <div className={`border rounded-2xl p-4.5 space-y-3.5 text-xs transition-colors duration-300 ${
+            isDark ? 'bg-slate-955 border-slate-805' : 'bg-slate-50 border-slate-150'
+          }`}>
             <span className="text-[9px] font-bold text-slate-500 uppercase block border-b border-slate-850 pb-1.5">Trip Summary Report</span>
             
             <div className="grid grid-cols-2 gap-4 text-left font-semibold">
               <div>
                 <span className="text-[9px] text-slate-500 block mb-0.5">DURATION</span>
-                <span className="text-slate-200 block">{elapsedTime}</span>
+                <span className={`transition-colors duration-300 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{elapsedTime}</span>
               </div>
               <div>
                 <span className="text-[9px] text-slate-500 block mb-0.5">DISTANCE COVERED</span>
-                <span className="text-slate-200 block">{tripDistance.toFixed(2)} km</span>
+                <span className={`transition-colors duration-300 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{tripDistance.toFixed(2)} km</span>
               </div>
               <div>
                 <span className="text-[9px] text-slate-500 block mb-0.5">MAX PASSENGERS</span>
-                <span className="text-slate-200 block">{maxOccupancy} passengers</span>
+                <span className={`transition-colors duration-300 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{maxOccupancy} passengers</span>
               </div>
               <div>
                 <span className="text-[9px] text-slate-500 block mb-0.5">VEHICLE ASSIGNED</span>
-                <span className="text-slate-200 block">{assignedBus?.number}</span>
+                <span className={`transition-colors duration-300 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{assignedBus?.number}</span>
               </div>
             </div>
           </div>
@@ -545,10 +627,12 @@ export const DriverDashboard = () => {
             
             <button
               disabled
-              className="w-full bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white py-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 opacity-50 cursor-not-allowed"
+              className={`w-full border py-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 opacity-50 cursor-not-allowed ${
+                isDark ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'
+              }`}
             >
               <span>View Trip History</span>
-              <span className="text-[8px] bg-slate-800 px-1.5 py-0.5 rounded uppercase font-semibold">Soon</span>
+              <span className={`text-[8px] px-1.5 py-0.5 rounded uppercase font-semibold ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>Soon</span>
             </button>
           </div>
         </div>

@@ -11,7 +11,8 @@ export const UserLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { alerts, isFirebaseOffline } = useBuses();
-  const { currentUser, role } = useAuth();
+  const { currentUser, role, theme } = useAuth();
+  const isDark = theme === 'dark';
   const { unreadCount } = useNotifications();
 
   // PWA Install Promotion States & Effect
@@ -99,14 +100,18 @@ export const UserLayout = () => {
       )}
 
       {/* Outlet Page Content with Transition Effect */}
-      <main className="flex-1 pb-16 overflow-y-auto bg-slate-50 no-scrollbar relative">
+      <main className={`flex-1 pb-16 overflow-y-auto no-scrollbar relative transition-colors duration-300 ${
+        isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'
+      }`}>
         <div key={location.key} className="animate-fade-in-slide-up">
           <Outlet />
         </div>
       </main>
 
       {/* Fixed Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-bottom-nav z-40" style={{ maxWidth: '430px', margin: '0 auto' }}>
+      <nav className={`fixed bottom-0 left-0 right-0 border-t shadow-bottom-nav z-40 transition-colors duration-300 ${
+        isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-100'
+      }`} style={{ maxWidth: '430px', margin: '0 auto' }}>
         <div className="flex justify-around items-center h-16 px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -116,8 +121,10 @@ export const UserLayout = () => {
               <button
                 key={item.label}
                 onClick={() => navigate(item.to)}
-                className={`flex flex-col items-center justify-center flex-1 py-1 text-slate-400 relative transition-all duration-200 ${
-                  isActive ? 'text-primary scale-105' : 'hover:text-slate-600'
+                className={`flex flex-col items-center justify-center flex-1 py-1 relative transition-all duration-200 ${
+                  isActive 
+                    ? (isDark ? 'text-blue-450 scale-105' : 'text-primary scale-105') 
+                    : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-650')
                 }`}
               >
                 <div className="relative">
@@ -131,13 +138,17 @@ export const UserLayout = () => {
                   )}
                 </div>
                 
-                <span className={`text-[10px] mt-1 select-none ${isActive ? 'font-black text-slate-800' : 'font-medium'}`}>
+                <span className={`text-[10px] mt-1 select-none transition-colors duration-200 ${
+                  isActive 
+                    ? `font-black ${isDark ? 'text-white' : 'text-slate-800'}` 
+                    : `font-medium ${isDark ? 'text-slate-450' : 'text-slate-500'}`
+                }`}>
                   {item.label}
                 </span>
 
                 {/* Active Indicator Blue Dot */}
                 {isActive && (
-                  <span className="absolute bottom-1 w-1 h-1 bg-primary rounded-full" />
+                  <span className={`absolute bottom-1 w-1 h-1 rounded-full transition-colors duration-200 ${isDark ? 'bg-blue-450' : 'bg-primary'}`} />
                 )}
               </button>
             );
